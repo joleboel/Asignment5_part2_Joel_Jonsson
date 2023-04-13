@@ -6,6 +6,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -21,7 +22,8 @@ public class MyStepdefs {
 
     private WebDriver driver;
     private WebDriverWait wait;
-
+    //denna kod är ful och jag är inte stolt över den >:(
+    //får massa socketexceptions pga någon version mismatch men adam sa att det var ok
     @Given("i navigate to the website")
     public void iNavigateToTheWebsite() {
         System.setProperty("webdriver.chrome.driver", "C:\\selenium\\chromedriver.exe");
@@ -29,7 +31,7 @@ public class MyStepdefs {
         options.addArguments("--remote-allow-origins=*");
         driver = new ChromeDriver(options);
         driver.get("https://login.mailchimp.com/signup/");
-        wait = new WebDriverWait(driver, Duration.ofSeconds(13));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(15));//kan hinna göra eventuell captcha under denna tid kan höjas om det behövs
         driver.manage().window().fullscreen();
         WebElement cookie = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("onetrust-reject-all-handler")));
         if(cookie.isDisplayed()) {
@@ -43,15 +45,22 @@ public class MyStepdefs {
         WebElement pw = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("new_password")));
         WebElement mail = driver.findElement(By.id("email"));
         mail.click();
-        mail.sendKeys("halooooooooo@chimpmail.com");
+        //ändra addressen nedan mellan testruns far att första testet ska bli godkänt
+        mail.sendKeys("haloodoodofoojedoeoooo@chimpmail.com");
         pw.click();
-        pw.sendKeys("NNmm99@@");
+        pw.sendKeys("NNmmm99@@");
 
     }
 
     @When("i click sign up")
     public void iClickSignUp() {
-        WebElement signup = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("create-account-enabled")));
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("window.scrollTo(0,document.body.scrollHeight)");
+        WebElement cookie = driver.findElement(By.id("onetrust-reject-all-handler"));
+        if(cookie.isDisplayed()) {
+            cookie.click();
+        }
+        WebElement signup = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("create-account-enabled")));
         signup.click();
         driver.manage().window().fullscreen();
     }
@@ -79,10 +88,10 @@ public class MyStepdefs {
 
     @Then("it will tell me to use a shorter username")
     public void itWillTellMeToUseAShorterUsername() {
-        WebElement longName = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("/html/body/div[2]/div/div[2]/main/div[2]/div/form/fieldset/div[2]/div/span")));
+        WebElement longName = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("span.invalid-error")));
 
-        boolean expected = true;
-        boolean actual = longName.isDisplayed();
+        String expected = "Enter a value less than 100 characters long";
+        String actual = longName.getText();
         assertEquals(expected, actual);
     }
 
@@ -118,9 +127,9 @@ public class MyStepdefs {
 
     @Then("it will tell me to add @ to my address")
     public void itWillTellMeToAddToMyAddress() {
-        WebElement mailtip = wait.until(ExpectedConditions.presenceOfElementLocated(By.className("invalid-error")));
-        Boolean expected = true;
-        Boolean actual = mailtip.isDisplayed();
+        WebElement mailtip = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("span.invalid-error")));
+        String expected = "An email address must contain a single @.";
+        String actual = mailtip.getText();
         assertEquals(expected, actual);
     }
 
